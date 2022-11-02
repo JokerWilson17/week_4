@@ -1,0 +1,82 @@
+---
+title: "week_4"
+output: html_document
+date: "2022-11-02"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+## 1.load package
+```{r}
+library(here)
+library(sf)
+library(countrycode)
+library(dplyr)
+library(janitor)
+```
+
+
+## 2.read data
+# shape file
+```{r}
+map<-st_read(here::here('World_Countries__Generalized_.shp'))
+```
+# csv file
+```{r}
+HDI <- read.csv(here::here("HDR21-22_Composite_indices_complete_time_series.csv"), na = " ", skip=0)
+```
+
+
+## 3.select columns(2019,2010)
+```{r}
+HDI1<-select(HDI, country, hdi_2019, hdi_2010, iso3)
+```
+
+##4. calculate difference
+```{r}
+HDI1$dif<-HDI1$hdi_2019-HDI1$hdi_2010
+```
+
+##5. change iso(country name)
+# map data iso are two, but HDI are three
+```{r}
+HDI2<-mutate(HDI1,iso2=countrycode(iso3, origin = 'iso3c', destination = 'iso2c'))
+```
+
+#6. join data
+```{r}
+final<-map%>%
+  clean_names()%>%
+  left_join(.,HDI2,by=c("iso"="iso2"))
+```
+
+#7. show map
+```{r}
+library(tmap)
+library(tmaptools)
+tmap_mode("plot")
+qtm(final, 
+    fill = "dif")
+```
